@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aromas del Campo - Gestión Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .btn-active { border-bottom: 3px solid white; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800 font-sans pb-10">
+
+    <div id="login-screen" class="fixed inset-0 z-[100] bg-green-900 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md text-center">
+            <i class="fas fa-leaf text-5xl text-green-600 mb-4"></i>
+            <h2 class="text-2xl font-black text-stone-800 uppercase tracking-tighter">Gestión Pro</h2>
+            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6">Aromas del Campo</p>
+            
+            <div class="space-y-4">
+                <input type="text" id="user" placeholder="Usuario" class="w-full p-4 rounded-2xl bg-stone-100 border-none focus:ring-2 focus:ring-green-500 outline-none">
+                <input type="password" id="pass" placeholder="Contraseña" class="w-full p-4 rounded-2xl bg-stone-100 border-none focus:ring-2 focus:ring-green-500 outline-none">
+                <button onclick="validarAcceso()" class="w-full bg-green-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-green-800 transition-all shadow-lg active:scale-95">
+                    Iniciar Sesión
+                </button>
+            </div>
+            <p id="login-error" class="text-red-500 text-[10px] font-black mt-4 hidden uppercase tracking-wider italic">Acceso denegado</p>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden">
+        <nav class="bg-green-800 text-white p-4 sticky top-0 z-50 shadow-xl">
+    <div class="flex justify-between items-center max-w-4xl mx-auto">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-leaf text-green-300"></i>
+            <h1 class="text-xl font-bold tracking-tight">AROMAS DEL CAMPO</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex gap-4">
+                <button onclick="showTab('catalogo')" id="btn-cat" class="pb-1 btn-active uppercase text-[10px] font-bold tracking-widest transition-all">Catálogo</button>
+                <button onclick="showTab('boleta')" id="btn-bol" class="pb-1 uppercase text-[10px] font-bold tracking-widest transition-all">Boleta</button>
+            </div>
+            <button onclick="cerrarSesion()" class="ml-2 bg-green-700 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-inner">
+                <i class="fas fa-sign-out-alt text-xs"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+
+        <main class="max-w-5xl mx-auto p-4 mt-2">
+            <section id="catalogo" class="tab-content active animate-fade-in">
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-4 top-4 text-stone-400"></i>
+                        <input type="text" id="search" placeholder="Buscar entre productos..." 
+                               class="w-full p-3 pl-12 rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-green-500 outline-none" 
+                               onkeyup="renderCatalogo()">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-3xl shadow-2xl border border-stone-200">
+                    <table class="w-full text-sm text-left bg-white">
+                        <thead class="bg-stone-800 text-white uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-4">Producto</th>
+                                <th class="p-4">Compra</th>
+                                <th class="p-4">Venta</th>
+                                <th class="p-4 text-green-400">Gana</th>
+                                <th class="p-4 text-blue-400">%</th>
+                                <th class="p-4 text-center">Añadir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-catalogo" class="divide-y divide-stone-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="boleta" class="tab-content animate-fade-in">
+                <div class="max-w-xl mx-auto">
+                    <div class="glass-card p-8 rounded-[2.5rem] shadow-2xl border border-white">
+                        <div class="text-center mb-6">
+                            <i class="fas fa-receipt text-4xl text-green-700 mb-2"></i>
+                            <h2 class="text-2xl font-black text-stone-800 uppercase tracking-tighter">Detalle del Pedido</h2>
+                            <p class="text-xs text-stone-500 font-bold uppercase tracking-widest">Aromas del Campo</p>
+                        </div>
+                        <div id="carrito-items" class="space-y-4 mb-8 min-h-[100px]"></div>
+                        <div class="bg-stone-50 p-6 rounded-3xl space-y-2 border border-stone-200">
+                            <div class="flex justify-between items-center text-stone-600 font-semibold">
+                                <span>TOTAL VENTA</span>
+                                <span id="total-boleta" class="text-3xl font-black text-green-700 font-mono">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-stone-200">
+                                <span class="text-[10px] font-bold text-stone-400 uppercase">Ganancia Estimada</span>
+                                <span id="ganancia-boleta" class="text-blue-600 font-bold">$0</span>
+                            </div>
+                        </div>
+                        <button onclick="enviarWhatsApp()" class="w-full mt-8 bg-green-600 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-green-700 transition-all flex justify-center items-center gap-3 active:scale-95 uppercase tracking-widest">
+                            <i class="fab fa-whatsapp text-2xl"></i> Enviar por WhatsApp
+                        </button>
+                        <button onclick="vaciarCarrito()" class="w-full mt-4 text-stone-400 font-bold text-xs uppercase hover:text-red-500 transition-colors">
+                            Vaciar todo
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+     // --- 3. SISTEMA DE USUARIOS ---
+const usuariosPermitidos = [
+    { u: "gerardo", p: "194226888" },
+    { u: "ignacio", p: "18.579.502-1" },
+    { u: "alejandro", p: "16.323.621-4" }
+];
+
+function validarAcceso() {
+    const userIn = document.getElementById('user').value.trim().toLowerCase();
+    const passIn = document.getElementById('pass').value.trim();
+    const errorMsg = document.getElementById('login-error');
+
+    const loginExitoso = usuariosPermitidos.find(user => user.u === userIn && user.p === passIn);
+
+    if (loginExitoso) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+        renderCatalogo();
+    } else {
+        errorMsg.classList.remove('hidden');
+        document.getElementById('pass').value = '';
+    }
+}
+
+// Escuchar la tecla Enter
+document.addEventListener('keypress', (e) => { if (e.key === 'Enter') validarAcceso(); });
+
+
+        // --- BASE DE DATOS Y LÓGICA ---
+        const DB = [
+          // (Tu lista de productos completa aquí...)
+          {n:"Arvejas",c:1100,v:2300},{n:"Garbanzo 9MM",c:1800,v:3000},{n:"Garbanzo 8MM",c:1500,v:2600},{n:"Lenteja 6MM",c:1300,v:2600},{n:"Lenteja 4MM",c:1500,v:2900},{n:"Lenteja Negra",c:2500,v:3400},{n:"Lentejas Rojas",c:1900,v:2600},{n:"Maíz Curagua",c:900,v:1700},{n:"Poroto Alubia",c:1600,v:2500},{n:"Poroto Burro",c:2200,v:3000},{n:"Poroto Rojo",c:2000,v:3000},{n:"Poroto Cimarron",c:2300,v:3100},{n:"Poroto Hallado",c:1600,v:2600},{n:"Poroto Negro",c:1000,v:2200},{n:"Poroto Pallar Grande",c:3000,v:4000},{n:"Poroto Pelado",c:1600,v:2200},{n:"Poroto Soya",c:1500,v:2200},{n:"Trigomote",c:1000,v:2000},{n:"Poroto Frutilla",c:2500,v:3300},{n:"Poroto Canario",c:2200,v:4000},
+          {n:"Arroz Basmati",c:1900,v:3200},{n:"Arroz Grado 1",c:690,v:1500},{n:"Arroz Integral",c:1100,v:1500},{n:"Avena Entera",c:990,v:1700},{n:"Avena Instantánea",c:990,v:1400},{n:"Chía",c:3200,v:4400},{n:"Chía Oscura",c:3900,v:4800},{n:"Cous Cous",c:2300,v:4500},{n:"Granola",c:2600,v:3500},{n:"Granola Semilla",c:4000,v:5000},{n:"Granola Especial",c:4000,v:5500},{n:"Quínoa Negra",c:3500,v:4800},{n:"Quínoa Roja",c:3200,v:4400},{n:"Quínoa Tricolor",c:3900,v:5800},{n:"Quínoa Blanca",c:4000,v:5400},{n:"Quínoa Popeada Dulce",c:6000,v:8500},{n:"Quínoa Pop Sin Azúcar",c:8500,v:10600},{n:"Quínoa Pop Colores",c:5000,v:6500},{n:"Sésamo Negro",c:4000,v:5400},{n:"Sésamo Tostado",c:4000,v:5400},{n:"Mix Sésamo",c:4000,v:5500},{n:"Sésamo Blanco",c:3000,v:5400},{n:"Linaza Entera",c:1900,v:2850},{n:"Semilla de Amapola",c:7000,v:8400},{n:"Mijo",c:2000,v:2500},
+          {n:"Almidón de Maíz",c:1000,v:2600},{n:"Bicarbonato",c:1000,v:1500},{n:"Cacao Amargo",c:5200,v:10600},{n:"Cacao Dulce",c:5800,v:7550},{n:"Chuño",c:1900,v:3200},{n:"Chuchoca Fina",c:1000,v:1750},{n:"Harina Almendra s/piel",c:11000,v:15000},{n:"Harina Almendra c/piel",c:5500,v:8100},{n:"Harina de Arroz",c:1700,v:2300},{n:"Harina de Avena",c:1200,v:2000},{n:"Harina de Garbanzo",c:1300,v:1800},{n:"Harina Integral",c:1200,v:1650},{n:"Harina de Linaza",c:2300,v:3100},{n:"Harina Tostada",c:1000,v:1350},{n:"Maqui en Polvo",c:16000,v:20800},{n:"Polenta",c:1000,v:1400},{n:"Sémola",c:2000,v:2900},{n:"Harina de Coco",c:2600,v:4750},{n:"Almidón de Mandioca",c:1900,v:2600},{n:"Gluten de Trigo",c:3900,v:3900},
+          {n:"Almendra Laminada",c:13000,v:14500},{n:"Almendra de Primera",c:10000,v:12800},{n:"Almendra de Segunda",c:9000,v:11250},{n:"Avellana Europea",c:10000,v:11000},{n:"Avellana Nacional",c:19000,v:24000},{n:"Ciruelas Sin Carozo",c:4800,v:6300},{n:"Coco Laminado",c:8000,v:10000},{n:"Coco Rallado",c:4500,v:7400},{n:"Hibiscus",c:8500,v:11400},{n:"Banana Chips",c:4500,v:6200},{n:"Castaña de Cajú",c:11000,v:14000},{n:"Garbanzo Frito",c:3000,v:4500},{n:"Cranberry",c:5600,v:6600},{n:"Fruta Confitada",c:2500,v:3300},{n:"Fruta Confitada ROCOFRUT",c:3200,v:3800},{n:"Damasco Turco",c:12000,v:13000},{n:"Dátiles sin Carozo",c:3200,v:4700},{n:"Goji",c:7000,v:10000},{n:"Higos",c:5300,v:6300},{n:"Habas Tostadas",c:7500,v:9500},{n:"Huesillo Mediano",c:4000,v:6000},{n:"Huesillo Extra",c:4500,v:7000},{n:"Huesillo Jumbo",c:5000,v:8000},{n:"Huesillo Descarozado",c:10000,v:13000},{n:"Jengibre",c:6500,v:8500},{n:"Maíz Tostado",c:4000,v:6000},{n:"Maíz Mostaza Miel",c:4000,v:6500},{n:"Maravilla Pelada",c:2300,v:3500},{n:"Pasas Corinto",c:3200,v:5200},{n:"Kiwi",c:8200,v:11070},{n:"Pasas Ámbar",c:2900,v:4400},{n:"Pasas Negras",c:3200,v:4300},{n:"Pasas Rubias",c:5000,v:7000},{n:"Pasas Rubias Segunda",c:3500,v:4800},{n:"Plátano Salado",c:13700,v:17000},{n:"Piña Cubo",c:6500,v:8500},{n:"Piña Anillo",c:8900,v:11000},{n:"Papaya",c:5600,v:7500},{n:"Pomelo",c:6300,v:8200},{n:"Pepa de Zapallo",c:5300,v:6300},{n:"Mix 7 Frutos",c:8200,v:8750},{n:"Pistacho c/ Cáscara",c:13500,v:17500},{n:"Pistacho s/ Cáscara",c:33000,v:38000},{n:"Crocante Pepa Zapallo",c:6500,v:8700},{n:"Crocante de Maní",c:4200,v:6200},{n:"Nuez Cuarto",c:7500,v:10000},{n:"Nuez Mariposa",c:9500,v:12800},{n:"Crocante de Cajú",c:8000,v:10400},{n:"Crocante Mix",c:6000,v:7800},{n:"Pretzel Sal Mar",c:3300,v:10300},{n:"Pretzel Mostaza Miel",c:6300,v:10300},{n:"Pretzel Chocolate",c:15000,v:18000},{n:"Manzana Cubo",c:7000,v:9000},{n:"Mango",c:7200,v:9400},{n:"Mango Bajo Azúcar",c:3000,v:4500},
+          {n:"Maní Merkén",c:3800,v:5200},{n:"Maní Miel",c:3800,v:5200},{n:"Maní Mix Japonés",c:4500,v:5500},{n:"Maní Tostado c/ Cáscara",c:3500,v:5000},{n:"Mix Bora Bora",c:5500,v:6700},{n:"Mix Clásico",c:4000,v:5500},{n:"Mix Coco",c:4600,v:6500},{n:"Mix Jumbo",c:6000,v:8600},{n:"Maní Natural Rojo",c:2700,v:3900},{n:"Maní Natural Café",c:2700,v:3900},{n:"Maní Tostado Sal/Sin Sal",c:1990,v:4000},{n:"Maní Japonés Sésamo",c:4900,v:6900},{n:"Mix Premium",c:5000,v:7000},{n:"Pasta de Maní King",c:2500,v:3400},{n:"Crokissimo (Varios)",c:3800,v:6100},{n:"Cajú Confitado",c:8500,v:11000},{n:"Maní Garrapiñado",c:3500,v:5000},{n:"Maní Runner Tostado",c:3000,v:4000},{n:"Maní Confitado (Varios)",c:2700,v:4000},{n:"Almendras Confitadas",c:10000,v:13000},
+          {n:"Gomitas Simples",c:4200,v:5500},{n:"Ositos Goma",c:4200,v:5500},{n:"Frutilla Goma",c:4200,v:5500},{n:"Gelatinas XXL",c:5300,v:6500},{n:"Chubis",c:5000,v:7200},{n:"Malva Coco",c:4600,v:6000},{n:"Gusanditos Spark",c:5500,v:6900},{n:"Guaguitas con Chocolate",c:5800,v:6900},{n:"Ositos Chocolate",c:5500,v:7600},{n:"Marshmallows Chocolate",c:5300,v:6000},{n:"Gojitos/Anís/Tronquitos",c:6500,v:8500},{n:"Croco Maní",c:5500,v:8100},{n:"Maravilla Chocolate",c:5500,v:7000},{n:"Cholitos",c:3500,v:5100},{n:"Choclo de Colores",c:5900,v:4600},{n:"Piedra de Chocolate",c:5000,v:14000},{n:"Jelly Beans",c:4000,v:5500},{n:"Naranjitas Chocolate",c:15000,v:19600},{n:"Naranjitas en Gajos",c:14500,v:18000},{n:"Maní con Chocolate",c:3900,v:5500},{n:"Maní Crocante Choc",c:6500,v:8500},{n:"Pasas con Chocolate",c:4500,v:5600},{n:"Pasas al Ron Choc",c:13500,v:17300},{n:"Fruity Chocolate",c:12000,v:15000},{n:"Maní Choc Premium",c:12000,v:15600},{n:"Café Choc",c:12500,v:17000},{n:"Coco Choc",c:12500,v:15600},{n:"Manzana Choc",c:12500,v:15600},{n:"Cranberry Choc",c:12000,v:16300},{n:"Damasco Choc",c:12000,v:15000},{n:"Almendra Chocolate",c:13500,v:16800},{n:"Crocante Mix Chocolate",c:8500,v:9000},{n:"Almendra Choc Caramelizada",c:8500,v:11100},{n:"Maní Choc Caramelo",c:5300,v:5900},{n:"Tiktok Jelly Drink",c:2900,v:3800},{n:"Calugas Manjar",c:6000,v:5200},{n:"Calugas Chocolate/Coco",c:4000,v:5200},{n:"Mostacilla/Pelotitas",c:3500,v:4600},{n:"Chips Chocolate",c:6000,v:10000},{n:"Chips 42% Cacao",c:14900,v:15000},{n:"Chips 53% Sin Azúcar",c:15400,v:18000},{n:"Cobertura Chocolate",c:6500,v:8500},{n:"Merenguitos (400gr)",c:2600,v:3500},{n:"Gomitas Frutalin",c:4500,v:5700},
+          {n:"Cafés Cereales",c:2000,v:2800},{n:"Flor de Jamaica",c:4500,v:6200},{n:"Té Azul Oolong",c:10000,v:16000},{n:"Té Blanco",c:17000,v:24000},{n:"Té Ceylon Negro",c:5900,v:8500},{n:"Té Chai",c:14000,v:17500},{n:"Té Rojo / Jazmín",c:10000,v:14400},{n:"Té Verde",c:4900,v:7200},{n:"Yerba Mate",c:2500,v:3500},{n:"Aceite Coco 200ml",c:2800,v:2800},{n:"Aceite Coco 1L",c:8700,v:8700},{n:"Callampa Deshidratada",c:13000,v:18000},{n:"Miel Poliflora",c:4300,v:5000},{n:"Proteína de Soya",c:1900,v:2600},{n:"Sal de Mar",c:630,v:900},{n:"Sal Rosa Himalaya",c:1500,v:2300},{n:"Tomate Deshidratado",c:9000,v:10800},{n:"Gelatina Sin Sabor",c:10000,v:10000},{n:"Charqui Seleccionado",c:2300,v:2800},{n:"Azúcar Rubia",c:1500,v:2000},{n:"Azúcar Morena",c:1000,v:1800},{n:"Azúcar Flor",c:1400,v:1700},{n:"Chifle Camote/Plátano",c:1000,v:1500},{n:"Papas al Hilo",c:5000,v:5000},{n:"Papayas al Jugo",c:4000,v:6200},{n:"Vinagre Manzana",c:3200,v:3600},
+          {n:"Clavo Polvo",c:13500,v:10250},{n:"Clavo Entero",c:15800,v:18750},{n:"Anís Estrellado",c:13000,v:16000},{n:"Canela Molida",c:5500,v:7500},{n:"Canela 53cm",c:20000,v:25000},{n:"Canela 10cm",c:6500,v:10000},{n:"Merken Normal",c:4600,v:5500},{n:"Merken Premium",c:6500,v:8100},{n:"Ajo en Polvo",c:3200,v:3900},{n:"Ajo Escamas/Granulado",c:5400,v:6500},{n:"Cardamomo Entero",c:6500,v:8250},{n:"Cardamomo Polvo",c:5600,v:8000},{n:"Laurel",c:10000,v:12500},{n:"Cebolla Polvo",c:5100,v:6300},{n:"Ají Color Premium",c:2900,v:4500},{n:"Ají Color Picante",c:4100,v:5150},{n:"Jengibre Polvo",c:4900,v:7300},{n:"Glutamato Monosódico",c:2900,v:3700},{n:"Curry",c:3000,v:3750},{n:"Mostaza Semilla",c:3900,v:4800},{n:"Cúrcuma",c:3600,v:4500},{n:"Aliño Completo",c:3500,v:4000},{n:"Comino Entero",c:6200,v:7750},{n:"Comino Polvo",c:4800,v:6000},{n:"Nuez Moscada Entera",c:18000,v:25000},{n:"Pimienta Entera",c:12000,v:16800},{n:"Pimienta Molida",c:7500,v:8600},{n:"Azafrán (1gr)",c:5000,v:7500},{n:"Orégano Premium",c:4800,v:5500},
+          {n:"Cereales Arroz/Trigo/Lenteja",c:3500,v:4500},{n:"Cereales Maca/Garbanzo",c:3500,v:4500},{n:"Pelota Peruana",c:3000,v:4000},{n:"Cereales Hojuelas",c:2900,v:3500},{n:"Cereales Estrellas/Esferas",c:2900,v:3500},{n:"Aceituna Rodaja Verde",c:4800,v:5500},{n:"Aceituna Azapa Negra",c:5000,v:6500},{n:"Aceitunas Sevillanas",c:3200,v:4200},{n:"Aceitunas Deshuesadas",c:3400,v:4250},{n:"Jalapeños Rodaja",c:2500,v:4000},{n:"Cebolla Perla",c:2100,v:2900},{n:"Salsa Americana",c:1700,v:2500},{n:"Pickles",c:2500,v:3100},{n:"Chucrut",c:1700,v:2200},{n:"Pepinillo Dill",c:2900,v:3900},{n:"Aceituna Rellena Pimentón",c:5400,v:6900},{n:"Ají Oro",c:1500,v:1900}
+        ];
+
+        let carrito = [];
+
+        function renderCatalogo() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const lista = document.getElementById('lista-catalogo');
+            lista.innerHTML = '';
+
+            DB.filter(p => p.n.toLowerCase().includes(search)).forEach(p => {
+                const gana = p.v - p.c;
+                const porc = p.c > 0 ? ((gana / p.c) * 100).toFixed(0) : 0;
+                
+                lista.innerHTML += `
+                    <tr class="border-b hover:bg-stone-50 transition-colors">
+                        <td class="p-4 font-medium">${p.n}</td>
+                        <td class="p-4 text-stone-400 font-mono">$${p.c}</td>
+                        <td class="p-4 font-bold text-green-700 font-mono">$${p.v}</td>
+                        <td class="p-4 text-blue-600 font-bold font-mono">$${gana}</td>
+                        <td class="p-4"><span class="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-xs font-black">${porc}%</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="agregarAlCarrito('${p.n}', ${p.v}, ${gana})" class="bg-green-600 text-white p-2 rounded-xl active:scale-90"><i class="fas fa-plus"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function agregarAlCarrito(nombre, precio, ganancia) {
+            const item = carrito.find(i => i.nombre === nombre);
+            if (item) { item.cant++; } 
+            else { carrito.push({ nombre, precio, ganancia, cant: 1 }); }
+            actualizarBoleta();
+        }
+
+        function actualizarBoleta() {
+            const cont = document.getElementById('carrito-items');
+            let total = 0;
+            let gananciaTotal = 0;
+            cont.innerHTML = '';
+
+            carrito.forEach((item, index) => {
+                const sub = item.precio * item.cant;
+                total += sub;
+                gananciaTotal += (item.ganancia * item.cant);
+                cont.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-stone-100 shadow-sm">
+                        <div><p class="font-black text-stone-800">${item.nombre}</p><p class="text-[10px] font-bold text-stone-400 italic">${item.cant} UN x $${item.precio}</p></div>
+                        <div class="flex items-center gap-4"><span class="font-mono font-black text-green-700">$${sub}</span><button onclick="eliminar(${index})" class="text-stone-200 hover:text-red-500"><i class="fas fa-times-circle text-lg"></i></button></div>
+                    </div>
+                `;
+            });
+                        document.getElementById('total-boleta').innerText = `$${total.toLocaleString('es-CL')}`;
+            document.getElementById('ganancia-boleta').innerText = `$${gananciaTotal.toLocaleString('es-CL')}`;
+        }
+
+        function eliminar(idx) { 
+            carrito.splice(idx, 1); 
+            actualizarBoleta(); 
+        }
+
+        function vaciarCarrito() { 
+            if(confirm("¿Vaciar todo el pedido?")) { 
+                carrito = []; 
+                actualizarBoleta(); 
+            } 
+        }
+
+        function showTab(t) {
+            document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+            document.getElementById(t).classList.add('active');
+            document.getElementById('btn-cat').classList.toggle('btn-active', t === 'catalogo');
+            document.getElementById('btn-bol').classList.toggle('btn-active', t === 'boleta');
+        }
+
+        function enviarWhatsApp() {
+            if (carrito.length === 0) {
+                alert("El carrito está vacío");
+                return;
+            }
+            let m = "🌿 *AROMAS DEL CAMPO* 🌿%0A";
+            let total = 0;
+            carrito.forEach(i => {
+                m += `📍 *${i.nombre}* (${i.cant}x$${i.precio}) = *$${(i.precio * i.cant).toLocaleString('es-CL')}*%0A`;
+                total += i.precio * i.cant;
+            });
+            m += `%0A💰 *TOTAL: $${total.toLocaleString('es-CL')}*`;
+            window.open(`https://wa.me/?text=${m}`);
+        }
+function cerrarSesion() {
+    // 1. Ocultar el contenido de la app
+    document.getElementById('app-content').classList.add('hidden');
+    
+    // 2. Mostrar la pantalla de login
+    document.getElementById('login-screen').classList.remove('hidden');
+    
+    // 3. Limpiar los campos de usuario y clave por seguridad
+    document.getElementById('user').value = '';
+    document.getElementById('pass').value = '';
+    
+    // 4. Ocultar mensaje de error si existía
+    document.getElementById('login-error').classList.add('hidden');
+}
+
+    </script>
+</body>
+</html>
